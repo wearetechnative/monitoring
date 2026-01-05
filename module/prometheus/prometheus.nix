@@ -5,6 +5,7 @@
     enable = true;
     port = 9090;
     retentionTime = "60d";
+    checkConfig = false;
 
     exporters.node.enable = true;
 

@@ -45,6 +45,35 @@ let
         example = "./dashboards/example";
       };
 
+      dashboardFiles = mkOption {
+        type = types.listOf (types.submodule {
+          options = {
+            name = mkOption {
+              type = types.str;
+              description = "Dashboard filename (e.g., 'ssl-check.json')";
+            };
+            source = mkOption {
+              type = types.path;
+              description = "Path to the dashboard JSON file (can be an agenix secret path at runtime)";
+            };
+          };
+        });
+        default = [];
+        description = ''
+          List of individual dashboard files for this customer.
+          Use this option when dashboards are stored as individual files (e.g., agenix secrets)
+          instead of in a directory. Cannot be used together with dashboardsPath.
+        '';
+        example = lib.literalExpression ''
+          [
+            {
+              name = "ssl-check.json";
+              source = config.age.secrets.dashboard-ssl.path;
+            }
+          ]
+        '';
+      };
+
     };
   };
 
