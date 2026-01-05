@@ -18,8 +18,8 @@
         overlays = [];
       });
   in {
-    nixosModules = forAllSystems (system: {
+    nixosModules = {
       monitoring = import ./module;
-    });
+    };
   };
 }

@@ -41,6 +41,13 @@ let
   }) customerConfigs);
 
 in {
+  imports = [
+    ./prometheus.nix
+    ./alertmanager.nix
+    ./exporters/blackbox.nix
+    ./exporters/vulnix.nix
+  ];
+
   options.services.prometheus = {
     customerConfigs = mkOption {
       type = types.listOf types.attrs;
@@ -58,12 +65,6 @@ in {
   };
 
   config = {
-    imports = [
-      ./prometheus.nix
-      ./alertmanager.nix
-      ./exporters/blackbox.nix
-      ./exporters/vulnix.nix
-    ];
 
     services.prometheus = {
       scrapeConfigs = mkAfter customerScrapeConfigs;

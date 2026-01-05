@@ -5,6 +5,7 @@ with lib;
 let
   cfg = config.services.grafana;
   customerConfigs = cfg.customerConfigs or [];
+  root_domain  = cfg.root_domain;
 
   # Filter customers that have dashboards configured
   customersWithDashboards = filter (customer: customer.dashboardsPath != null) customerConfigs;
@@ -47,8 +48,8 @@ in
 
     settings.server = {
       http_port = 3000;
-      domain = "toorren.net";
-      root_url = "http://192.168.2.52:3000";
+      domain = "${root_domain}";
+      root_url = "https://grafana.${root_domain}:443";
     };
 
     provision = {
@@ -90,7 +91,7 @@ in
     recommendedProxySettings = true;
     recommendedTlsSettings = true;
 
-    virtualHosts."grafana.dutchyland.net" = {
+    virtualHosts."grafana.${root_domain}" = {
       enableACME = true;
       forceSSL = true;
       locations."/" = {

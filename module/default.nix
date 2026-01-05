@@ -44,10 +44,16 @@ let
         description = "Path to directory containing Grafana dashboard JSON files for this customer";
         example = "./dashboards/example";
       };
+
     };
   };
 
 in {
+  imports = [
+    ./prometheus
+    ./grafana
+  ];
+
   options.services.monitoring = {
     enable = mkEnableOption "Prometheus and Grafana monitoring stack";
 
@@ -69,6 +75,13 @@ in {
           }
         ]
       '';
+    };
+
+    root_domain = mkOption {
+      type = types.str;
+      default = "";
+      description = "Root domain needed for grafana nginx configuration";
+      example = "example.com";
     };
 
     alertmanager = {
@@ -116,14 +129,10 @@ in {
   };
 
   config = mkIf cfg.enable {
-    imports = [
-      ./prometheus
-      ./grafana
-    ];
-
     # Pass customer configurations to prometheus and grafana modules
     services.prometheus.customerConfigs = cfg.customers;
     services.grafana.customerConfigs = cfg.customers;
+    services.grafana.root_domain = cfg.root_domain;
 
     # Pass alertmanager configuration
     services.prometheus.alertmanagerConfig = {
