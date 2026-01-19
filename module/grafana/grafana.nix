@@ -104,7 +104,6 @@ in
 
   networking.firewall.allowedTCPPorts = [ 3000 ];
 
-
   services.nginx = {
     enable = true;
     recommendedGzipSettings = true;
@@ -117,6 +116,22 @@ in
       forceSSL = true;
       locations."/" = {
         proxyPass = "http://0.0.0.0:3000";
+      };
+    };
+
+    virtualHosts."alertmanager.${root_domain}" = {
+      enableACME = true;
+      forceSSL = true;
+      locations."/" = {
+        proxyPass = "http://0.0.0.0:9093";
+      };
+    };
+
+    virtualHosts."prometheus.${root_domain}" = {
+      enableACME = true;
+      forceSSL = true;
+      locations."/" = {
+        proxyPass = "http://0.0.0.0:9090";
       };
     };
   };
