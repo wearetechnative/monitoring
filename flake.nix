@@ -19,7 +19,7 @@
       });
   in {
     nixosModules = {
-      grafana = import ./module;
+      grafana-prometheus = import ./module;
     };
   };
 }

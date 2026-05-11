@@ -2,11 +2,11 @@
 
 {
   imports = [
-    # Import the grafana module from the flake
-    # grafana.nixosModules.${system}.grafana
+    # Import the grafana-prometheus module from the flake
+    # grafana-prometheus.nixosModules.${system}.grafana-prometheus
   ];
 
-  services.grafana = {
+  services.grafana-prometheus = {
     enable = true;
 
     customers = [

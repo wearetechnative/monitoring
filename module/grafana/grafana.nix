@@ -55,7 +55,7 @@ let
   dashboardFiles = lib.mergeAttrs dashboardFilesFromPath dashboardFilesFromList;
 
 in {
-  config = lib.mkIf config.services.grafana.enable {
+  config = lib.mkIf config.services.grafana-prometheus.enable {
     services.grafana = {
       enable = true;
 

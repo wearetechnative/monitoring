@@ -75,7 +75,7 @@ in {
     };
   };
 
-  config = mkIf config.services.grafana.enable {
+  config = mkIf config.services.grafana-prometheus.enable {
 
     services.prometheus = {
       scrapeConfigs = mkAfter customerScrapeConfigs;
