@@ -1,7 +1,7 @@
 { pkgs, lib, config, ... }:
 
 {
-  config = lib.mkIf config.services.monitoring.enable {
+  config = lib.mkIf config.services.grafana.enable {
     services.prometheus = {
       enable = true;
       port = 9090;

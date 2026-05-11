@@ -3,7 +3,7 @@
 with lib;
 
 let
-  cfg = config.services.monitoring;
+  cfg = config.services.grafana;
 
   customerModule = types.submodule {
     options = {
@@ -83,7 +83,7 @@ in {
     ./grafana
   ];
 
-  options.services.monitoring = {
+  options.services.grafana = {
     enable = mkEnableOption "Prometheus and Grafana monitoring stack";
 
     customers = mkOption {

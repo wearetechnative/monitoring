@@ -19,7 +19,7 @@
       });
   in {
     nixosModules = {
-      monitoring = import ./module;
+      grafana = import ./module;
     };
   };
 }

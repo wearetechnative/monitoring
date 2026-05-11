@@ -2,11 +2,11 @@
 
 {
   imports = [
-    # Import the monitoring module from the flake
-    # monitoring.nixosModules.${system}.monitoring
+    # Import the grafana module from the flake
+    # grafana.nixosModules.${system}.grafana
   ];
 
-  services.monitoring = {
+  services.grafana = {
     enable = true;
 
     customers = [
