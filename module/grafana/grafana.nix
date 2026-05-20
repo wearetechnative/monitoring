@@ -96,14 +96,33 @@ in {
       lib.mkIf (lib.any (c: (c.dashboardFiles or [ ]) != [ ]) customerConfigs) {
         deps = [ "agenix" "users" "groups" ];
         text = lib.concatStrings (lib.concatMap (customer:
+          let
+            customerDir = "/etc/grafana/dashboards/${customer.name}";
+            wantedFiles = lib.concatMapStringsSep " "
+              (dashFile: lib.escapeShellArg dashFile.name)
+              (customer.dashboardFiles or [ ]);
+          in
+          [ ''
+            mkdir -p ${customerDir}
+
+            # Remove dashboard files no longer present in configuration
+            for existing in ${customerDir}/*.json; do
+              [ -f "$existing" ] || continue
+              filename=$(basename "$existing")
+              case " ${wantedFiles} " in
+                *" '$filename' "*) ;;
+                *) rm -f "$existing" ;;
+              esac
+            done
+          '' ]
+          ++
           map (dashFile: ''
-            mkdir -p /etc/grafana/dashboards/${customer.name}
             cp ${lib.escapeShellArg (toString dashFile.source)} \
-               /etc/grafana/dashboards/${customer.name}/${lib.escapeShellArg dashFile.name}
+               ${customerDir}/${lib.escapeShellArg dashFile.name}
             chown grafana:grafana \
-               /etc/grafana/dashboards/${customer.name}/${lib.escapeShellArg dashFile.name}
+               ${customerDir}/${lib.escapeShellArg dashFile.name}
             chmod 0644 \
-               /etc/grafana/dashboards/${customer.name}/${lib.escapeShellArg dashFile.name}
+               ${customerDir}/${lib.escapeShellArg dashFile.name}
           '') (customer.dashboardFiles or [ ])
         ) customerConfigs);
       };
