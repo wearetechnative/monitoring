@@ -20,6 +20,7 @@
   in {
     nixosModules = {
       grafana-prometheus = import ./module;
+      monitoring = import ./module;
     };
   };
 }

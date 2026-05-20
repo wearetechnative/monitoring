@@ -81,6 +81,7 @@ in {
   imports = [
     ./prometheus
     ./grafana
+    (lib.mkAliasOptionModule [ "services" "monitoring" ] [ "services" "grafana-prometheus" ])
   ];
 
   options.services.grafana-prometheus = {

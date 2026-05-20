@@ -88,8 +88,25 @@ in {
       declarativePlugins = with pkgs.grafanaPlugins; [ grafana-piechart-panel ];
     };
 
-    # Plaats dashboards in /etc/grafana/dashboards/*
-    environment.etc = dashboardFiles;
+    # Nix store dashboards via environment.etc (symlinks, volgorde-onafhankelijk)
+    environment.etc = dashboardFilesFromPath;
+
+    # Agenix-sourced dashboards via activation script (na agenix sentinel)
+    system.activationScripts.grafana-dashboards-agenix =
+      lib.mkIf (lib.any (c: (c.dashboardFiles or [ ]) != [ ]) customerConfigs) {
+        deps = [ "agenix" "users" "groups" ];
+        text = lib.concatStrings (lib.concatMap (customer:
+          map (dashFile: ''
+            mkdir -p /etc/grafana/dashboards/${customer.name}
+            cp ${lib.escapeShellArg (toString dashFile.source)} \
+               /etc/grafana/dashboards/${customer.name}/${lib.escapeShellArg dashFile.name}
+            chown grafana:grafana \
+               /etc/grafana/dashboards/${customer.name}/${lib.escapeShellArg dashFile.name}
+            chmod 0644 \
+               /etc/grafana/dashboards/${customer.name}/${lib.escapeShellArg dashFile.name}
+          '') (customer.dashboardFiles or [ ])
+        ) customerConfigs);
+      };
 
     networking.firewall.allowedTCPPorts = [ 3000 ];
 

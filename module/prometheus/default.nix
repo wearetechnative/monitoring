@@ -84,6 +84,15 @@ in {
 
     environment.etc = customerEtcFiles;
 
+    system.activationScripts.prometheus-reload = mkIf (allAlertRules != []) {
+      deps = [ "agenix" ];
+      text = ''
+        if systemctl is-active --quiet prometheus 2>/dev/null; then
+          systemctl kill -s HUP prometheus.service
+        fi
+      '';
+    };
+
     services.vulnix-exporter.enable = true;
     services.vulnix-exporter.port = 9109;
     services.vulnix-exporter.interval = "monthly";
