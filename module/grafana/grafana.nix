@@ -54,6 +54,62 @@ let
   # Merge both sources
   dashboardFiles = lib.mergeAttrs dashboardFilesFromPath dashboardFilesFromList;
 
+  oauth2Cfg = config.services.grafana-prometheus.oauth2Proxy;
+  oauth2Addr = "http://127.0.0.1:4180";
+
+  # A vhost for an internal backend, optionally protected by oauth2-proxy via
+  # nginx auth_request. When auth is disabled the backend is proxied directly
+  # (preserving the module's previous behaviour).
+  authVhost = backendPort:
+    if oauth2Cfg.enable then {
+      enableACME = true;
+      forceSSL = true;
+      locations = {
+        "/oauth2/" = {
+          proxyPass = oauth2Addr;
+          extraConfig = ''
+            proxy_set_header X-Scheme                $scheme;
+            proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
+          '';
+        };
+        "= /oauth2/auth" = {
+          proxyPass = "${oauth2Addr}/oauth2/auth";
+          extraConfig = ''
+            proxy_set_header X-Scheme         $scheme;
+            # nginx auth_request includes headers but not the body
+            proxy_set_header Content-Length   "";
+            proxy_pass_request_body           off;
+          '';
+        };
+        "/" = {
+          proxyPass = "http://127.0.0.1:${toString backendPort}";
+          extraConfig = ''
+            auth_request /oauth2/auth;
+            error_page 401 = @redirectToAuth2ProxyLogin;
+
+            # Pass the authenticated identity to the backend
+            auth_request_set $user  $upstream_http_x_auth_request_user;
+            auth_request_set $email $upstream_http_x_auth_request_email;
+            proxy_set_header X-User  $user;
+            proxy_set_header X-Email $email;
+
+            # Propagate refreshed session cookies from oauth2-proxy
+            auth_request_set $auth_cookie $upstream_http_set_cookie;
+            add_header Set-Cookie $auth_cookie;
+          '';
+        };
+        "@redirectToAuth2ProxyLogin" = {
+          extraConfig = ''
+            return 307 $scheme://$host/oauth2/start?rd=$scheme://$host$request_uri;
+          '';
+        };
+      };
+    } else {
+      enableACME = true;
+      forceSSL = true;
+      locations."/" = { proxyPass = "http://127.0.0.1:${toString backendPort}"; };
+    };
+
 in {
   config = lib.mkIf config.services.grafana-prometheus.enable {
     services.grafana = {
@@ -136,23 +192,16 @@ in {
       recommendedProxySettings = true;
       recommendedTlsSettings = true;
 
+      # Grafana keeps its own OAuth and is not fronted by oauth2-proxy.
       virtualHosts."grafana.${root_domain}" = {
         enableACME = true;
         forceSSL = true;
-        locations."/" = { proxyPass = "http://0.0.0.0:3000"; };
+        locations."/" = { proxyPass = "http://127.0.0.1:3000"; };
       };
 
-      virtualHosts."alertmanager.${root_domain}" = {
-        enableACME = true;
-        forceSSL = true;
-        locations."/" = { proxyPass = "http://0.0.0.0:9093"; };
-      };
-
-      virtualHosts."prometheus.${root_domain}" = {
-        enableACME = true;
-        forceSSL = true;
-        locations."/" = { proxyPass = "http://0.0.0.0:9090"; };
-      };
+      # Prometheus and Alertmanager are protected by oauth2-proxy when enabled.
+      virtualHosts."alertmanager.${root_domain}" = authVhost 9093;
+      virtualHosts."prometheus.${root_domain}" = authVhost 9090;
     };
   };
 }

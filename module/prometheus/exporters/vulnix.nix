@@ -57,7 +57,8 @@ def vulnix_json():
         return Response("{}", mimetype="application/json")
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(${toString config.services.vulnix-exporter.port}))
+    # Bind to localhost only; scraped by the local Prometheus over 127.0.0.1.
+    app.run(host="127.0.0.1", port=int(${toString config.services.vulnix-exporter.port}))
 '';
 
   };
