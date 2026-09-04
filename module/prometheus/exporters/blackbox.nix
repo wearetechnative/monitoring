@@ -3,6 +3,8 @@
   services.prometheus.exporters.blackbox = {
     enable = true;
     port = 9115;
+    # Only reachable by the local Prometheus; not exposed on the network.
+    listenAddress = "127.0.0.1";
     configFile = pkgs.writeText "blackbox.yml" ''
       modules:
         http_2xx:

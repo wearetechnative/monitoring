@@ -81,6 +81,7 @@ in {
   imports = [
     ./prometheus
     ./grafana
+    ./oauth2-proxy
     (lib.mkAliasOptionModule [ "services" "monitoring" ] [ "services" "grafana-prometheus" ])
   ];
 
@@ -112,6 +113,78 @@ in {
       default = "";
       description = "Root domain needed for grafana nginx configuration";
       example = "example.com";
+    };
+
+    oauth2Proxy = {
+      enable = mkOption {
+        type = types.bool;
+        default = false;
+        description = ''
+          Protect the Prometheus and Alertmanager vhosts with oauth2-proxy
+          (OIDC) via nginx `auth_request`. Reuses an external IdP (e.g. AWS
+          Cognito) for SSO consistent with Grafana. The Grafana vhost is left
+          untouched (it does its own OAuth).
+
+          The consuming configuration must register an OIDC app client with the
+          callback URLs `https://prometheus.<root_domain>/oauth2/callback` and
+          `https://alertmanager.<root_domain>/oauth2/callback`.
+        '';
+      };
+
+      oidcIssuerUrl = mkOption {
+        type = types.str;
+        default = "";
+        description = "OIDC issuer URL of the identity provider.";
+        example = "https://cognito-idp.eu-central-1.amazonaws.com/eu-central-1_abc123";
+      };
+
+      clientId = mkOption {
+        type = types.str;
+        default = "";
+        description = "OIDC app client id for the monitoring oauth2-proxy.";
+      };
+
+      clientSecretFile = mkOption {
+        type = types.nullOr types.path;
+        default = null;
+        description = ''
+          Path to a file containing the OIDC client secret. Read at runtime via
+          systemd credentials (e.g. an agenix secret path); never placed on the
+          command line or in the Nix store.
+        '';
+        example = "/run/agenix/oauth2-proxy-client-secret";
+      };
+
+      cookieSecretFile = mkOption {
+        type = types.nullOr types.path;
+        default = null;
+        description = ''
+          Path to a file containing the oauth2-proxy cookie secret (a 16, 24 or
+          32 byte value). Read at runtime via systemd credentials.
+        '';
+        example = "/run/agenix/oauth2-proxy-cookie-secret";
+      };
+
+      allowedGroups = mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        description = ''
+          Groups (from the OIDC groups claim) allowed to access Prometheus and
+          Alertmanager. Empty means any user authenticated by the pool is
+          allowed.
+        '';
+        example = [ "grafana-admin" ];
+      };
+
+      groupsClaim = mkOption {
+        type = types.str;
+        default = "groups";
+        description = ''
+          Name of the OIDC token claim carrying group membership. AWS Cognito
+          exposes groups under `cognito:groups`.
+        '';
+        example = "cognito:groups";
+      };
     };
 
     alertmanager = {
